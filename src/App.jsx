@@ -18,6 +18,7 @@ import { ThemeProvider } from "./context/ThemeContext.jsx";
 const Login = lazy(() => import("./views/Login.jsx"));
 const Dashboard = lazy(() => import("./views/Dashboard.jsx"));
 const Profile = lazy(() => import("./views/Profile.jsx"));
+const Settings = lazy(() => import("./views/Settings.jsx"));
 const Achievements = lazy(() => import("./views/Achievements.jsx"));
 const GlobalChat = lazy(() => import("./views/GlobalChat.jsx"));
 const DMChat = lazy(() => import("./views/DMChat.jsx"));
@@ -254,6 +255,8 @@ export default function App() {
 
             <Route path="/profile" element={<ProtectedRoute user={user} userProfile={userProfile}><Profile user={user} userProfile={userProfile}/></ProtectedRoute>} />
 
+            <Route path="/settings" element={<ProtectedRoute user={user} userProfile={userProfile}><Settings userProfile={userProfile}/></ProtectedRoute>} />
+
             <Route path="/solo" element={<ProtectedRoute user={user} userProfile={userProfile}><Solo user={user} userProfile={userProfile}/></ProtectedRoute>} />
 
             <Route path="/burnouts" element={<ProtectedRoute user={user} userProfile={userProfile}><Burnouts user={user} userProfile={userProfile}/></ProtectedRoute>} />
@@ -280,7 +283,6 @@ export default function App() {
 
             <Route path="/boxing" element={<ProtectedRoute user={user} userProfile={userProfile}><BoxingArena/></ProtectedRoute>} />
 
-            {/* ADMIN ROUTE */}
             <Route
               path="/admin-control"
               element={
