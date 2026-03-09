@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { db } from "../firebase";
 import { collection, getDocs } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
+import "../styles/admin.css";
 
 export default function AdminDashboard() {
 
@@ -39,6 +40,7 @@ export default function AdminDashboard() {
       }
 
       setLoading(false);
+
     }
 
     loadStats();
