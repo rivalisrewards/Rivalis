@@ -299,7 +299,8 @@ export default function App() {
 
       </ThemeProvider>
 
-    </BackgroundShell>
+    </VoiceProvider>
+  </BackgroundShell>
 
   );
 
