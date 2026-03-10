@@ -1,88 +1,84 @@
-import React, { useEffect, useRef } from "react"
+import React, { createContext, useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
-import VoiceEngine from "./VoiceEngine"
+
+import WakeWordEngine from "./WakeWordEngine"
 import createVoiceCommands from "./VoiceCommands"
 
-export default function VoiceProvider({ userProfile, children }) {
+export const VoiceContext = createContext()
+
+export default function VoiceProvider({ children, userProfile }){
 
   const navigate = useNavigate()
 
-  const taps = useRef(0)
-  const lastTap = useRef(0)
-  const enabled = useRef(false)
+  const [voiceActive,setVoiceActive] = useState(false)
+  const [tapCount,setTapCount] = useState(0)
 
-  /* Initialize voices + command system */
-  useEffect(() => {
-
-    /* iOS / Safari voice initialization */
-    speechSynthesis.getVoices()
+  useEffect(()=>{
 
     const commands = createVoiceCommands(navigate)
 
-    VoiceEngine.init(commands)
+    WakeWordEngine.init(commands)
 
-  }, [navigate])
+  },[navigate])
 
+  useEffect(()=>{
 
-  /* 5 tap activation top-left */
-  useEffect(() => {
+    if(userProfile?.wakeWord){
 
-    const handleTap = (e) => {
+      WakeWordEngine.setWakeWord(userProfile.wakeWord)
 
-      const x = e.clientX
-      const y = e.clientY
+    }
 
-      /* only detect taps in top-left corner */
-      if (x > 120 || y > 120) return
+  },[userProfile])
 
-      const now = Date.now()
+  useEffect(()=>{
 
-      if (now - lastTap.current > 800) {
-        taps.current = 0
-      }
+    if(!voiceActive) return
 
-      taps.current++
-      lastTap.current = now
+    WakeWordEngine.start()
 
-      if (taps.current >= 5) {
+    return ()=>WakeWordEngine.stop()
 
-        taps.current = 0
-        enabled.current = !enabled.current
+  },[voiceActive])
 
-        if (enabled.current) {
+  useEffect(()=>{
 
-          VoiceEngine.start()
-          VoiceEngine.speak("Voice control activated")
+    const handleTap = (e)=>{
 
-        } else {
+      if(e.clientX < 120 && e.clientY < 120){
 
-          VoiceEngine.stop()
-          VoiceEngine.speak("Voice control disabled")
+        const newCount = tapCount + 1
+
+        setTapCount(newCount)
+
+        if(newCount === 5){
+
+          setVoiceActive(prev=>!prev)
+
+          setTapCount(0)
 
         }
+
+        setTimeout(()=>setTapCount(0),1000)
 
       }
 
     }
 
-    window.addEventListener("click", handleTap)
+    window.addEventListener("click",handleTap)
 
-    return () =>
-      window.removeEventListener("click", handleTap)
+    return ()=>window.removeEventListener("click",handleTap)
 
-  }, [])
+  },[tapCount])
 
+  return(
 
-  /* Apply user selected voice */
-  useEffect(() => {
+    <VoiceContext.Provider value={{voiceActive}}>
 
-    if (!userProfile?.selectedVoice) return
+      {children}
 
-    VoiceEngine.setVoice(userProfile.selectedVoice)
+    </VoiceContext.Provider>
 
-  }, [userProfile])
-
-
-  return children
+  )
 
 }
