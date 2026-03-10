@@ -14,6 +14,7 @@ import AdBanner from "./components/AdBanner.jsx";
 import ChatbotTour from "./components/ChatbotTour/ChatbotTour.jsx";
 import BackgroundShell from "./components/BackgroundShell.jsx";
 import { ThemeProvider } from "./context/ThemeContext.jsx";
+import VoiceProvider from "./voice/VoiceProvider";
 
 const Login = lazy(() => import("./views/Login.jsx"));
 const Dashboard = lazy(() => import("./views/Dashboard.jsx"));
