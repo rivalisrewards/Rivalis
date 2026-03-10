@@ -11,7 +11,11 @@ export default function VoiceProvider({ userProfile, children }) {
   const lastTap = useRef(0)
   const enabled = useRef(false)
 
+  /* Initialize voices + command system */
   useEffect(() => {
+
+    /* iOS / Safari voice initialization */
+    speechSynthesis.getVoices()
 
     const commands = createVoiceCommands(navigate)
 
@@ -19,6 +23,8 @@ export default function VoiceProvider({ userProfile, children }) {
 
   }, [navigate])
 
+
+  /* 5 tap activation top-left */
   useEffect(() => {
 
     const handleTap = (e) => {
@@ -26,6 +32,7 @@ export default function VoiceProvider({ userProfile, children }) {
       const x = e.clientX
       const y = e.clientY
 
+      /* only detect taps in top-left corner */
       if (x > 120 || y > 120) return
 
       const now = Date.now()
@@ -65,6 +72,8 @@ export default function VoiceProvider({ userProfile, children }) {
 
   }, [])
 
+
+  /* Apply user selected voice */
   useEffect(() => {
 
     if (!userProfile?.selectedVoice) return
@@ -72,6 +81,7 @@ export default function VoiceProvider({ userProfile, children }) {
     VoiceEngine.setVoice(userProfile.selectedVoice)
 
   }, [userProfile])
+
 
   return children
 
