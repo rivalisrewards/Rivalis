@@ -20,7 +20,6 @@ const Login = lazy(() => import("./views/Login.jsx"));
 const Dashboard = lazy(() => import("./views/Dashboard.jsx"));
 const Profile = lazy(() => import("./views/Profile.jsx"));
 const Settings = lazy(() => import("./views/Settings.jsx"));
-const Achievements = lazy(() => import("./views/Achievements.jsx"));
 const GlobalChat = lazy(() => import("./views/GlobalChat.jsx"));
 const DMChat = lazy(() => import("./views/DMChat.jsx"));
 const Leaderboard = lazy(() => import("./views/Leaderboard.jsx"));
@@ -37,43 +36,43 @@ const BoxingArena = lazy(() => import("./boxing/pages/Arena.tsx"));
 const Subscription = lazy(() => import("./views/Subscription.jsx"));
 const FitnessDashboard = lazy(() => import("./views/FitnessDashboard.jsx"));
 
-export default function App() {
+export default function App(){
 
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [userProfile, setUserProfile] = useState(null);
-  const [checkingSetup, setCheckingSetup] = useState(true);
-  const [profileLoaded, setProfileLoaded] = useState(false);
+  const [user,setUser] = useState(null);
+  const [loading,setLoading] = useState(true);
+  const [userProfile,setUserProfile] = useState(null);
+  const [checkingSetup,setCheckingSetup] = useState(true);
+  const [profileLoaded,setProfileLoaded] = useState(false);
 
-  const [showOnboarding, setShowOnboarding] = useState(false);
-  const [onboardingComplete, setOnboardingComplete] = useState(false);
-  const [isNewSignup, setIsNewSignup] = useState(false);
+  const [showOnboarding,setShowOnboarding] = useState(false);
+  const [onboardingComplete,setOnboardingComplete] = useState(false);
+  const [isNewSignup,setIsNewSignup] = useState(false);
 
-  const [initialHype, setInitialHype] = useState(false);
-  const [showBot, setShowBot] = useState(false);
-  const [activeGame, setActiveGame] = useState(null);
+  const [initialHype,setInitialHype] = useState(false);
+  const [showBot,setShowBot] = useState(false);
+  const [activeGame,setActiveGame] = useState(null);
 
-  const [theme, setTheme] = useState(() => {
+  const [theme,setTheme] = useState(()=>{
     return localStorage.getItem("theme") || "red-black";
   });
 
-  const launchGame = (url) => {
+  const launchGame = (url)=>{
     setActiveGame(url);
   };
 
-  const closeGame = () => {
+  const closeGame = ()=>{
     setActiveGame(null);
   };
 
-  useEffect(() => {
+  useEffect(()=>{
     window.launchGame = launchGame;
-    return () => delete window.launchGame;
-  }, []);
+    return ()=> delete window.launchGame;
+  },[]);
 
-  useEffect(() => {
+  useEffect(()=>{
 
     const body = document.body;
 
@@ -85,84 +84,81 @@ export default function App() {
 
     body.classList.add(`theme-${theme}`);
 
-    localStorage.setItem("theme", theme);
+    localStorage.setItem("theme",theme);
 
-  }, [theme]);
+  },[theme]);
 
-  const cycleTheme = () => {
-    setTheme(prev => prev === "red-black" ? "white-black" : "red-black");
+  const cycleTheme = ()=>{
+    setTheme(prev=>prev === "red-black" ? "white-black" : "red-black");
   };
 
-  useEffect(() => {
+  useEffect(()=>{
 
-    if (!user) return;
+    if(!user) return;
 
     const path = location.pathname.split("/")[1] || "dashboard";
 
-    UserService.updateHeartbeat(user.uid, path);
+    UserService.updateHeartbeat(user.uid,path);
 
-    const interval = setInterval(() => {
-      UserService.updateHeartbeat(user.uid, path);
-    }, 30000);
+    const interval = setInterval(()=>{
+      UserService.updateHeartbeat(user.uid,path);
+    },30000);
 
-    return () => clearInterval(interval);
+    return ()=> clearInterval(interval);
 
-  }, [user, location.pathname]);
+  },[user,location.pathname]);
 
-  useEffect(() => {
+  useEffect(()=>{
+    const timer = setTimeout(()=> setInitialHype(false),3000);
+    return ()=> clearTimeout(timer);
+  },[]);
 
-    const timer = setTimeout(() => setInitialHype(false), 3000);
-    return () => clearTimeout(timer);
+  const refreshUserProfile = async(uid)=>{
 
-  }, []);
-
-  const refreshUserProfile = async (uid) => {
-
-    try {
+    try{
 
       const result = await UserService.getUserProfile(uid);
 
-      if (result.success && result.profile) {
+      if(result.success && result.profile){
         setUserProfile(result.profile);
         return result.profile;
       }
 
-    } catch (error) {
+    }catch(error){
       console.error(error);
     }
 
     return null;
-
   };
 
-  useEffect(() => {
+  useEffect(()=>{
 
-    let unsubscribe = () => {};
+    let unsubscribe = ()=>{};
 
-    authReady.then(() => {
+    authReady.then(()=>{
 
-      unsubscribe = onAuthStateChanged(auth, async currentUser => {
+      unsubscribe = onAuthStateChanged(auth, async(currentUser)=>{
 
         setUser(currentUser);
 
-        if (currentUser) {
+        if(currentUser){
 
-          try {
+          try{
 
             const result = await UserService.getUserProfile(currentUser.uid);
 
-            if (result.success && result.profile) {
+            if(result.success && result.profile){
 
               setUserProfile(result.profile);
 
-              if (result.profile.hasCompletedSetup) {
+              if(result.profile.hasCompletedSetup){
 
                 setShowOnboarding(false);
                 setOnboardingComplete(true);
                 setIsNewSignup(false);
                 setShowBot(true);
 
-              } else {
+              }else{
 
                 setShowOnboarding(true);
                 setIsNewSignup(true);
@@ -171,7 +167,7 @@ export default function App() {
 
             }
 
-          } catch (error) {
+          }catch(error){
             console.error(error);
           }
 
@@ -185,53 +181,53 @@ export default function App() {
 
     });
 
-    return () => unsubscribe();
+    return ()=> unsubscribe();
 
-  }, []);
+  },[]);
 
-  useEffect(() => {
+  useEffect(()=>{
 
-    if (!user?.uid) {
+    if(!user?.uid){
       setUserProfile(null);
       return;
     }
 
-    const ref = doc(db, "users", user.uid);
+    const ref = doc(db,"users",user.uid);
 
-    const unsub = onSnapshot(ref, snap => {
+    const unsub = onSnapshot(ref,(snap)=>{
 
-      if (snap.exists()) {
+      if(snap.exists()){
         setUserProfile(snap.data());
-      } else {
+      }else{
         setUserProfile(null);
       }
 
     });
 
-    return () => unsub();
+    return ()=> unsub();
 
-  }, [user?.uid]);
+  },[user?.uid]);
 
-  const skipLoading = () => {
+  const skipLoading = ()=>{
     setInitialHype(false);
     setLoading(false);
     setCheckingSetup(false);
     setProfileLoaded(true);
   };
 
-  if (loading || checkingSetup || !profileLoaded || initialHype) {
-    return <LoadingScreen onSkip={skipLoading} />;
+  if(loading || checkingSetup || !profileLoaded || initialHype){
+    return <LoadingScreen onSkip={skipLoading}/>;
   }
 
-  if (user && showOnboarding && !onboardingComplete) {
-    return <OnboardingSlides onComplete={() => setOnboardingComplete(true)} />;
+  if(user && showOnboarding && !onboardingComplete){
+    return <OnboardingSlides onComplete={()=> setOnboardingComplete(true)}/>;
   }
 
-  return (
-  <BackgroundShell>
-    <VoiceProvider userProfile={userProfile}>
+  return(
 
-      {(!userProfile || userProfile.subscriptionStatus !== "active") && <AdBanner />}
+    <BackgroundShell>
+
+      {(!userProfile || userProfile.subscriptionStatus !== "active") && <AdBanner/>}
 
       {user && (
         <Navbar
@@ -244,63 +240,66 @@ export default function App() {
 
       <ThemeProvider theme={theme}>
 
-        <Suspense fallback={<div style={{padding:20}}>LOADING…</div>}>
+        <VoiceProvider userProfile={userProfile}>
 
-          <Routes>
+          <Suspense fallback={<div style={{padding:20}}>LOADING…</div>}>
 
-            <Route path="/" element={user ? <Navigate to="/dashboard"/> : <Navigate to="/login"/>} />
+            <Routes>
 
-            <Route path="/login" element={!user ? <Login/> : <Navigate to="/dashboard"/>} />
+              <Route path="/" element={user ? <Navigate to="/dashboard"/> : <Navigate to="/login"/>} />
 
-            <Route path="/dashboard" element={<ProtectedRoute user={user} userProfile={userProfile}><Dashboard user={user}/></ProtectedRoute>} />
+              <Route path="/login" element={!user ? <Login/> : <Navigate to="/dashboard"/>} />
 
-            <Route path="/profile" element={<ProtectedRoute user={user} userProfile={userProfile}><Profile user={user} userProfile={userProfile}/></ProtectedRoute>} />
+              <Route path="/dashboard" element={<ProtectedRoute user={user} userProfile={userProfile}><Dashboard user={user}/></ProtectedRoute>} />
 
-            <Route path="/settings" element={<ProtectedRoute user={user} userProfile={userProfile}><Settings userProfile={userProfile}/></ProtectedRoute>} />
+              <Route path="/profile" element={<ProtectedRoute user={user} userProfile={userProfile}><Profile user={user} userProfile={userProfile}/></ProtectedRoute>} />
 
-            <Route path="/solo" element={<ProtectedRoute user={user} userProfile={userProfile}><Solo user={user} userProfile={userProfile}/></ProtectedRoute>} />
+              <Route path="/settings" element={<ProtectedRoute user={user} userProfile={userProfile}><Settings userProfile={userProfile}/></ProtectedRoute>} />
 
-            <Route path="/burnouts" element={<ProtectedRoute user={user} userProfile={userProfile}><Burnouts user={user} userProfile={userProfile}/></ProtectedRoute>} />
+              <Route path="/solo" element={<ProtectedRoute user={user} userProfile={userProfile}><Solo user={user} userProfile={userProfile}/></ProtectedRoute>} />
 
-            <Route path="/live" element={<ProtectedRoute user={user} userProfile={userProfile}><Live user={user} userProfile={userProfile}/></ProtectedRoute>} />
+              <Route path="/burnouts" element={<ProtectedRoute user={user} userProfile={userProfile}><Burnouts user={user} userProfile={userProfile}/></ProtectedRoute>} />
 
-            <Route path="/run" element={<ProtectedRoute user={user} userProfile={userProfile}><Run user={user} userProfile={userProfile}/></ProtectedRoute>} />
+              <Route path="/live" element={<ProtectedRoute user={user} userProfile={userProfile}><Live user={user} userProfile={userProfile}/></ProtectedRoute>} />
 
-            <Route path="/raffle" element={<ProtectedRoute user={user} userProfile={userProfile}><RaffleRoom user={user} userProfile={userProfile}/></ProtectedRoute>} />
+              <Route path="/run" element={<ProtectedRoute user={user} userProfile={userProfile}><Run user={user} userProfile={userProfile}/></ProtectedRoute>} />
 
-            <Route path="/fitness" element={<ProtectedRoute user={user} userProfile={userProfile}><FitnessDashboard user={user} userProfile={userProfile}/></ProtectedRoute>} />
+              <Route path="/raffle" element={<ProtectedRoute user={user} userProfile={userProfile}><RaffleRoom user={user} userProfile={userProfile}/></ProtectedRoute>} />
 
-            <Route path="/leaderboard" element={<ProtectedRoute user={user} userProfile={userProfile}><Leaderboard user={user}/></ProtectedRoute>} />
+              <Route path="/fitness" element={<ProtectedRoute user={user} userProfile={userProfile}><FitnessDashboard user={user} userProfile={userProfile}/></ProtectedRoute>} />
 
-            <Route path="/chat" element={<ProtectedRoute user={user} userProfile={userProfile}><GlobalChat user={user} userProfile={userProfile}/></ProtectedRoute>} />
+              <Route path="/leaderboard" element={<ProtectedRoute user={user} userProfile={userProfile}><Leaderboard user={user}/></ProtectedRoute>} />
 
-            <Route path="/dm" element={<ProtectedRoute user={user} userProfile={userProfile}><DMChat user={user} userProfile={userProfile}/></ProtectedRoute>} />
+              <Route path="/chat" element={<ProtectedRoute user={user} userProfile={userProfile}><GlobalChat user={user} userProfile={userProfile}/></ProtectedRoute>} />
 
-            <Route path="/shop" element={<ProtectedRoute user={user} userProfile={userProfile}><MerchShop/></ProtectedRoute>} />
+              <Route path="/dm" element={<ProtectedRoute user={user} userProfile={userProfile}><DMChat user={user} userProfile={userProfile}/></ProtectedRoute>} />
 
-            <Route path="/other-apps" element={<ProtectedRoute user={user} userProfile={userProfile}><OtherApps/></ProtectedRoute>} />
+              <Route path="/shop" element={<ProtectedRoute user={user} userProfile={userProfile}><MerchShop/></ProtectedRoute>} />
 
-            <Route path="/subscription" element={<ProtectedRoute user={user} userProfile={userProfile}><Subscription user={user} userProfile={userProfile}/></ProtectedRoute>} />
+              <Route path="/other-apps" element={<ProtectedRoute user={user} userProfile={userProfile}><OtherApps/></ProtectedRoute>} />
 
-            <Route path="/boxing" element={<ProtectedRoute user={user} userProfile={userProfile}><BoxingArena/></ProtectedRoute>} />
+              <Route path="/subscription" element={<ProtectedRoute user={user} userProfile={userProfile}><Subscription user={user} userProfile={userProfile}/></ProtectedRoute>} />
 
-            <Route
-              path="/admin-control"
-              element={
-                <AdminRoute>
-                  <AdminDashboard userProfile={userProfile}/>
-                </AdminRoute>
-              }
-            />
+              <Route path="/boxing" element={<ProtectedRoute user={user} userProfile={userProfile}><BoxingArena/></ProtectedRoute>} />
 
-          </Routes>
+              <Route
+                path="/admin-control"
+                element={
+                  <AdminRoute>
+                    <AdminDashboard userProfile={userProfile}/>
+                  </AdminRoute>
+                }
+              />
 
-        </Suspense>
+            </Routes>
+
+          </Suspense>
+
+        </VoiceProvider>
 
       </ThemeProvider>
 
-    </VoiceProvider>
-  </BackgroundShell>
+    </BackgroundShell>
 
   );
 
