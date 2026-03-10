@@ -53,9 +53,8 @@ export default function Navbar({ user, userProfile, theme, cycleTheme }) {
           style={{
             width: "40px",
             height: "40px",
-            fontSize: "1.2rem"
+            fontSize: "1.2rem",
           }}
-          title="Cycle Theme"
         >
           {theme === "red-black" ? "🔴" : theme === "white-black" ? "⚪" : "⚫"}
         </button>
@@ -98,16 +97,9 @@ export default function Navbar({ user, userProfile, theme, cycleTheme }) {
 
             <div className="dropdown">
 
-              <Link
-                to="/dashboard"
-                onClick={closeDropdown}
-                onMouseEnter={hoverEnter}
-                onMouseLeave={hoverLeave}
-              >
+              <Link to="/dashboard" onClick={closeDropdown} onMouseEnter={hoverEnter} onMouseLeave={hoverLeave}>
                 Home
               </Link>
-
-              {/* PROFILE SUBMENU */}
 
               <div style={{ position: "relative" }}>
 
@@ -116,13 +108,10 @@ export default function Navbar({ user, userProfile, theme, cycleTheme }) {
                   style={{
                     color: "#fff",
                     padding: "0.5rem",
-                    cursor: "pointer",
                     background: "transparent",
                     border: "none",
                     width: "100%",
-                    textAlign: "left",
-                    fontSize: "inherit",
-                    fontFamily: "inherit"
+                    textAlign: "left"
                   }}
                   onMouseEnter={hoverEnter}
                   onMouseLeave={hoverLeave}
@@ -143,45 +132,16 @@ export default function Navbar({ user, userProfile, theme, cycleTheme }) {
                       padding: "0.5rem",
                       marginLeft: "0.5rem",
                       minWidth: "160px",
-                      boxShadow: `0 0 15px ${t.shadowMd}, 0 0 30px ${t.shadowSm}, inset 0 0 20px ${t.shadowXxs}`,
                       zIndex: 10000
                     }}
                   >
 
-                    <Link
-                      to="/profile"
-                      onClick={closeDropdown}
-                      onMouseEnter={hoverEnter}
-                      onMouseLeave={hoverLeave}
-                    >
+                    <Link to="/profile" onClick={closeDropdown} onMouseEnter={hoverEnter} onMouseLeave={hoverLeave}>
                       View Profile
                     </Link>
 
-                    <Link
-                      to="/settings"
-                      onClick={closeDropdown}
-                      onMouseEnter={hoverEnter}
-                      onMouseLeave={hoverLeave}
-                    >
+                    <Link to="/settings" onClick={closeDropdown} onMouseEnter={hoverEnter} onMouseLeave={hoverLeave}>
                       Settings
-                    </Link>
-
-                    <Link
-                      to="/avatar-creator"
-                      onClick={closeDropdown}
-                      onMouseEnter={hoverEnter}
-                      onMouseLeave={hoverLeave}
-                    >
-                      Avatar Creator
-                    </Link>
-
-                    <Link
-                      to="/achievements"
-                      onClick={closeDropdown}
-                      onMouseEnter={hoverEnter}
-                      onMouseLeave={hoverLeave}
-                    >
-                      Achievements
                     </Link>
 
                   </div>
@@ -190,75 +150,39 @@ export default function Navbar({ user, userProfile, theme, cycleTheme }) {
 
               </div>
 
-              <Link
-                to="/fitness"
-                onClick={closeDropdown}
-                onMouseEnter={hoverEnter}
-                onMouseLeave={hoverLeave}
-              >
+              <Link to="/fitness" onClick={closeDropdown} onMouseEnter={hoverEnter} onMouseLeave={hoverLeave}>
                 Fitness Dashboard
               </Link>
 
-              <Link
-                to="/chat"
-                onClick={closeDropdown}
-                onMouseEnter={hoverEnter}
-                onMouseLeave={hoverLeave}
-              >
+              <Link to="/chat" onClick={closeDropdown} onMouseEnter={hoverEnter} onMouseLeave={hoverLeave}>
                 Chat
               </Link>
 
-              <Link
-                to="/dm"
-                onClick={closeDropdown}
-                onMouseEnter={hoverEnter}
-                onMouseLeave={hoverLeave}
-              >
+              <Link to="/dm" onClick={closeDropdown} onMouseEnter={hoverEnter} onMouseLeave={hoverLeave}>
                 DM
               </Link>
 
-              <Link
-                to="/leaderboard"
-                onClick={closeDropdown}
-                onMouseEnter={hoverEnter}
-                onMouseLeave={hoverLeave}
-              >
+              <Link to="/leaderboard" onClick={closeDropdown} onMouseEnter={hoverEnter} onMouseLeave={hoverLeave}>
                 Leaderboard
               </Link>
 
-              {(userProfile?.role === "admin" || user?.email === "socalturfexperts@gmail.com") && (
+              {userProfile?.role === "admin" && (
                 <Link
                   to="/admin-control"
                   onClick={closeDropdown}
                   onMouseEnter={hoverEnter}
                   onMouseLeave={hoverLeave}
-                  style={{
-                    color: t.accent,
-                    fontWeight: "bold",
-                    textShadow: `0 0 10px ${t.shadowSm}`
-                  }}
+                  style={{ color: t.accent, fontWeight: "bold" }}
                 >
                   Admin Console
                 </Link>
               )}
 
-              <Link
-                to="/shop"
-                onClick={closeDropdown}
-                onMouseEnter={hoverEnter}
-                onMouseLeave={hoverLeave}
-              >
+              <Link to="/shop" onClick={closeDropdown} onMouseEnter={hoverEnter} onMouseLeave={hoverLeave}>
                 Shop
               </Link>
 
-              <button
-                onClick={() => {
-                  handleLogout();
-                  closeDropdown();
-                }}
-                onMouseEnter={hoverEnter}
-                onMouseLeave={hoverLeave}
-              >
+              <button onClick={() => { handleLogout(); closeDropdown(); }}>
                 Logout
               </button>
 
