@@ -4,187 +4,361 @@ import { doc, getDoc, updateDoc } from "firebase/firestore"
 
 export default function Settings(){
 
-  const [loading,setLoading] = useState(true)
-  const [wakeWord,setWakeWord] = useState("rival")
-  const [saving,setSaving] = useState(false)
+const user = auth.currentUser
 
-  const user = auth.currentUser
+const [loading,setLoading] = useState(true)
+const [saving,setSaving] = useState(false)
 
-  useEffect(()=>{
+const [nickname,setNickname] = useState("")
+const [wakeWord,setWakeWord] = useState("rival")
 
-    const loadSettings = async ()=>{
+const [ttsEnabled,setTtsEnabled] = useState(true)
+const [screenReader,setScreenReader] = useState(false)
 
-      if(!user){
-        setLoading(false)
-        return
-      }
+const [voiceName,setVoiceName] = useState("")
+const [voiceRate,setVoiceRate] = useState(1)
+const [voicePitch,setVoicePitch] = useState(1)
 
-      try{
+const [notificationsEnabled,setNotificationsEnabled] = useState(true)
+const [matchAlerts,setMatchAlerts] = useState(true)
+const [chatAlerts,setChatAlerts] = useState(true)
 
-        const ref = doc(db,"users",user.uid)
-        const snap = await getDoc(ref)
+const [voices,setVoices] = useState([])
 
-        if(snap.exists()){
+useEffect(()=>{
 
-          const data = snap.data()
+const loadVoices = ()=>{
 
-          if(data.wakeWord)
-            setWakeWord(data.wakeWord)
+const v = speechSynthesis.getVoices()
 
-        }
+setVoices(v)
 
-      }catch(error){
+if(v.length && !voiceName){
+setVoiceName(v[0].name)
+}
 
-        console.error("Settings load error:",error)
+}
 
-      }
+loadVoices()
 
-      setLoading(false)
+speechSynthesis.onvoiceschanged = loadVoices
 
-    }
+},[])
 
-    loadSettings()
+useEffect(()=>{
 
-  },[user])
+const loadSettings = async()=>{
 
-  const saveWakeWord = async ()=>{
+if(!user){
+setLoading(false)
+return
+}
 
-    if(!user) return
+try{
 
-    const cleaned = wakeWord.trim().toLowerCase()
+const ref = doc(db,"users",user.uid)
+const snap = await getDoc(ref)
 
-    if(cleaned.length < 2) return
+if(snap.exists()){
 
-    try{
+const data = snap.data()
 
-      setSaving(true)
+if(data.nickname) setNickname(data.nickname)
+if(data.wakeWord) setWakeWord(data.wakeWord)
 
-      const ref = doc(db,"users",user.uid)
+if(data.ttsEnabled !== undefined)
+setTtsEnabled(data.ttsEnabled)
 
-      await updateDoc(ref,{
-        wakeWord: cleaned
-      })
+if(data.screenReader !== undefined)
+setScreenReader(data.screenReader)
 
-    }catch(error){
+if(data.selectedVoice)
+setVoiceName(data.selectedVoice)
 
-      console.error("Wake word update failed:",error)
+if(data.voiceRate)
+setVoiceRate(data.voiceRate)
 
-    }
+if(data.voicePitch)
+setVoicePitch(data.voicePitch)
 
-    setSaving(false)
+if(data.notificationsEnabled !== undefined)
+setNotificationsEnabled(data.notificationsEnabled)
 
-  }
+if(data.matchAlerts !== undefined)
+setMatchAlerts(data.matchAlerts)
 
-  if(loading)
-    return (
-      <div style={{padding:"2rem"}}>
-        Loading settings...
-      </div>
-    )
+if(data.chatAlerts !== undefined)
+setChatAlerts(data.chatAlerts)
 
-  return(
+}
 
-    <div
-      style={{
-        maxWidth:"900px",
-        margin:"0 auto",
-        padding:"2rem",
-        color:"#fff"
-      }}
-    >
+}catch(err){
 
-      <h1 style={{marginBottom:"2rem"}}>Settings</h1>
+console.error("Settings load error",err)
 
-      <section
-        style={{
-          background:"#111",
-          padding:"1.5rem",
-          borderRadius:"10px",
-          marginBottom:"2rem",
-          border:"1px solid rgba(255,0,0,0.2)"
-        }}
-      >
+}
 
-        <h2 style={{marginBottom:"1rem"}}>Voice Control</h2>
+setLoading(false)
 
-        <div style={{marginBottom:"1rem"}}>
+}
 
-          <label
-            style={{
-              display:"block",
-              marginBottom:"6px",
-              fontWeight:"600"
-            }}
-          >
-            Wake Word
-          </label>
+loadSettings()
 
-          <input
-            value={wakeWord}
-            onChange={(e)=>setWakeWord(e.target.value)}
-            style={{
-              padding:"10px",
-              width:"260px",
-              borderRadius:"6px",
-              border:"1px solid #333",
-              background:"#000",
-              color:"#fff"
-            }}
-          />
+},[user])
 
-        </div>
+const speak = (text)=>{
 
-        <button
-          onClick={saveWakeWord}
-          disabled={saving}
-          style={{
-            padding:"10px 18px",
-            borderRadius:"6px",
-            background:"#ff3030",
-            border:"none",
-            color:"#fff",
-            cursor:"pointer"
-          }}
-        >
-          {saving ? "Saving..." : "Save Wake Word"}
-        </button>
+if(!ttsEnabled) return
 
-      </section>
+const msg = new SpeechSynthesisUtterance(text)
+
+const selected = voices.find(v=>v.name === voiceName)
+
+if(selected) msg.voice = selected
+
+msg.rate = voiceRate
+msg.pitch = voicePitch
+
+speechSynthesis.speak(msg)
+
+}
+
+const testVoice = ()=>{
+
+speak("Voice settings updated successfully")
+
+}
+
+const saveSettings = async()=>{
+
+if(!user) return
+
+setSaving(true)
+
+try{
+
+const ref = doc(db,"users",user.uid)
+
+await updateDoc(ref,{
+
+nickname,
+wakeWord:wakeWord.toLowerCase(),
+
+ttsEnabled,
+screenReader,
+
+selectedVoice:voiceName,
+voiceRate,
+voicePitch,
+
+notificationsEnabled,
+matchAlerts,
+chatAlerts
+
+})
+
+speak("Settings saved")
+
+}catch(err){
+
+console.error("Save settings failed",err)
+
+}
+
+setSaving(false)
+
+}
+
+if(loading){
+return <div style={{padding:"2rem"}}>Loading settings...</div>
+}
+
+return(
+
+<div style={{maxWidth:"900px",margin:"0 auto",padding:"2rem",color:"#fff"}}>
+
+<h1 style={{marginBottom:"2rem"}}>Settings</h1>
+
+{/* PROFILE */}
+
+<section style={{background:"#111",padding:"1.5rem",borderRadius:"10px",marginBottom:"2rem"}}>
+
+<h2>Profile</h2>
+
+<label>Nickname</label>
+
+<input
+value={nickname}
+onChange={(e)=>setNickname(e.target.value)}
+style={{display:"block",marginTop:"6px",padding:"8px"}}
+/>
+
+</section>
 
 
-      <section
-        style={{
-          background:"#111",
-          padding:"1.5rem",
-          borderRadius:"10px",
-          border:"1px solid rgba(255,0,0,0.2)"
-        }}
-      >
+{/* VOICE */}
 
-        <h2 style={{marginBottom:"1rem"}}>Voice Commands</h2>
+<section style={{background:"#111",padding:"1.5rem",borderRadius:"10px",marginBottom:"2rem"}}>
 
-        <ul style={{lineHeight:"1.8"}}>
+<h2>Voice Assistant</h2>
 
-          <li>Rival dashboard</li>
-          <li>Rival open chat</li>
-          <li>Rival open dm</li>
-          <li>Rival leaderboard</li>
-          <li>Rival open profile</li>
-          <li>Rival fitness dashboard</li>
-          <li>Rival solo</li>
-          <li>Rival burnouts</li>
-          <li>Rival live competition</li>
-          <li>Rival pause workout</li>
-          <li>Rival resume workout</li>
-          <li>Rival exit workout</li>
-          <li>Rival cards left</li>
+<label>
 
-        </ul>
+<input
+type="checkbox"
+checked={ttsEnabled}
+onChange={(e)=>setTtsEnabled(e.target.checked)}
+/>
 
-      </section>
+Enable Voice Feedback
 
-    </div>
+</label>
 
-  )
+<br/><br/>
+
+<label>
+
+<input
+type="checkbox"
+checked={screenReader}
+onChange={(e)=>setScreenReader(e.target.checked)}
+/>
+
+Read Interface Aloud
+
+</label>
+
+<br/><br/>
+
+<label>Wake Word</label>
+
+<input
+value={wakeWord}
+onChange={(e)=>setWakeWord(e.target.value)}
+style={{marginLeft:"10px"}}
+/>
+
+<br/><br/>
+
+<label>Voice</label>
+
+<select
+value={voiceName}
+onChange={(e)=>setVoiceName(e.target.value)}
+style={{marginLeft:"10px"}}
+>
+
+{voices.map(v=>(
+<option key={v.name} value={v.name}>
+{v.name}
+</option>
+))}
+
+</select>
+
+<br/><br/>
+
+<label>Voice Speed</label>
+
+<input
+type="range"
+min="0.5"
+max="2"
+step="0.1"
+value={voiceRate}
+onChange={(e)=>setVoiceRate(parseFloat(e.target.value))}
+/>
+
+<br/><br/>
+
+<label>Voice Pitch</label>
+
+<input
+type="range"
+min="0.5"
+max="2"
+step="0.1"
+value={voicePitch}
+onChange={(e)=>setVoicePitch(parseFloat(e.target.value))}
+/>
+
+<br/><br/>
+
+<button onClick={testVoice}>
+Test Voice
+</button>
+
+</section>
+
+
+{/* NOTIFICATIONS */}
+
+<section style={{background:"#111",padding:"1.5rem",borderRadius:"10px",marginBottom:"2rem"}}>
+
+<h2>Notifications</h2>
+
+<label>
+
+<input
+type="checkbox"
+checked={notificationsEnabled}
+onChange={(e)=>setNotificationsEnabled(e.target.checked)}
+/>
+
+Enable Notifications
+
+</label>
+
+<br/><br/>
+
+<label>
+
+<input
+type="checkbox"
+checked={matchAlerts}
+onChange={(e)=>setMatchAlerts(e.target.checked)}
+/>
+
+Match Alerts
+
+</label>
+
+<br/><br/>
+
+<label>
+
+<input
+type="checkbox"
+checked={chatAlerts}
+onChange={(e)=>setChatAlerts(e.target.checked)}
+/>
+
+Chat Alerts
+
+</label>
+
+</section>
+
+
+<button
+onClick={saveSettings}
+disabled={saving}
+style={{
+padding:"12px 20px",
+background:"#ff3030",
+border:"none",
+borderRadius:"6px",
+color:"#fff",
+cursor:"pointer"
+}}
+>
+
+{saving ? "Saving..." : "Save Settings"}
+
+</button>
+
+</div>
+
+)
 
 }
