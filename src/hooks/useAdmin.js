@@ -10,7 +10,11 @@ export default function useAdmin() {
 
   useEffect(() => {
 
+    let mounted = true
+
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
+
+      if (!mounted) return
 
       if (!user) {
         setIsAdmin(false)
@@ -22,6 +26,8 @@ export default function useAdmin() {
 
         const ref = doc(db, "users", user.uid)
         const snap = await getDoc(ref)
+
+        if (!mounted) return
 
         if (snap.exists()) {
           const data = snap.data()
@@ -35,13 +41,17 @@ export default function useAdmin() {
         setIsAdmin(false)
       }
 
-      setLoading(false)
+      if (mounted) setLoading(false)
 
     })
 
-    return () => unsubscribe()
+    return () => {
+      mounted = false
+      unsubscribe()
+    }
 
   }, [])
 
   return { isAdmin, loading }
+
 }
