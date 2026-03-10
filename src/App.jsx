@@ -228,8 +228,8 @@ export default function App() {
   }
 
   return (
-
-    <BackgroundShell>
+  <BackgroundShell>
+    <VoiceProvider userProfile={userProfile}>
 
       {(!userProfile || userProfile.subscriptionStatus !== "active") && <AdBanner />}
 
