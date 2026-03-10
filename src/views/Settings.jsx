@@ -1,238 +1,190 @@
-import React, { useState, useEffect } from "react";
-import { auth, db } from "../firebase";
-import { doc, updateDoc } from "firebase/firestore";
+import React, { useEffect, useState } from "react"
+import { auth, db } from "../firebase"
+import { doc, getDoc, updateDoc } from "firebase/firestore"
 
-export default function Settings({ userProfile }) {
+export default function Settings(){
 
-  const [nickname, setNickname] = useState("");
-  const [ttsEnabled, setTtsEnabled] = useState(false);
-  const [voiceEnabled, setVoiceEnabled] = useState(false);
-  const [voiceRate, setVoiceRate] = useState(1);
-  const [voicePitch, setVoicePitch] = useState(1);
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
+  const [loading,setLoading] = useState(true)
+  const [wakeWord,setWakeWord] = useState("rival")
+  const [saving,setSaving] = useState(false)
 
-  useEffect(() => {
+  const user = auth.currentUser
 
-    if (!userProfile) return;
+  useEffect(()=>{
 
-    setNickname(userProfile.nickname || "");
-    setTtsEnabled(userProfile.ttsEnabled ?? true);
-    setVoiceEnabled(userProfile.voiceControlEnabled ?? false);
-    setVoiceRate(userProfile.voiceRate ?? 1);
-    setVoicePitch(userProfile.voicePitch ?? 1);
+    const loadSettings = async ()=>{
 
-  }, [userProfile]);
+      if(!user){
+        setLoading(false)
+        return
+      }
 
-  const saveSettings = async () => {
+      try{
 
-    if (!auth.currentUser) return;
+        const ref = doc(db,"users",user.uid)
+        const snap = await getDoc(ref)
 
-    setSaving(true);
-    setSaved(false);
+        if(snap.exists()){
 
-    try {
+          const data = snap.data()
 
-      const ref = doc(db, "users", auth.currentUser.uid);
+          if(data.wakeWord)
+            setWakeWord(data.wakeWord)
 
-      await updateDoc(ref, {
-        nickname,
-        ttsEnabled,
-        voiceControlEnabled: voiceEnabled,
-        voiceRate,
-        voicePitch
-      });
+        }
 
-      setSaved(true);
+      }catch(error){
 
-    } catch (err) {
-      console.error("Settings save error:", err);
+        console.error("Settings load error:",error)
+
+      }
+
+      setLoading(false)
+
     }
 
-    setSaving(false);
+    loadSettings()
 
-  };
+  },[user])
 
-  const testVoice = () => {
+  const saveWakeWord = async ()=>{
 
-    if (!ttsEnabled) return;
+    if(!user) return
 
-    const utterance = new SpeechSynthesisUtterance(
-      "Rivalis voice system online."
-    );
+    const cleaned = wakeWord.trim().toLowerCase()
 
-    utterance.rate = voiceRate;
-    utterance.pitch = voicePitch;
+    if(cleaned.length < 2) return
 
-    speechSynthesis.speak(utterance);
+    try{
 
-  };
+      setSaving(true)
 
-  return (
+      const ref = doc(db,"users",user.uid)
 
-    <div style={styles.container}>
+      await updateDoc(ref,{
+        wakeWord: cleaned
+      })
 
-      <h1>Settings</h1>
+    }catch(error){
 
-      <div style={styles.card}>
+      console.error("Wake word update failed:",error)
 
-        <h2>Account</h2>
+    }
 
-        <label>Nickname</label>
+    setSaving(false)
 
-        <input
-          value={nickname}
-          onChange={(e)=>setNickname(e.target.value)}
-          style={styles.input}
-        />
+  }
 
+  if(loading)
+    return (
+      <div style={{padding:"2rem"}}>
+        Loading settings...
       </div>
+    )
 
-      <div style={styles.card}>
+  return(
 
-        <h2>Voice System</h2>
+    <div
+      style={{
+        maxWidth:"900px",
+        margin:"0 auto",
+        padding:"2rem",
+        color:"#fff"
+      }}
+    >
 
-        <div style={styles.row}>
+      <h1 style={{marginBottom:"2rem"}}>Settings</h1>
 
-          <label>Text To Speech</label>
+      <section
+        style={{
+          background:"#111",
+          padding:"1.5rem",
+          borderRadius:"10px",
+          marginBottom:"2rem",
+          border:"1px solid rgba(255,0,0,0.2)"
+        }}
+      >
+
+        <h2 style={{marginBottom:"1rem"}}>Voice Control</h2>
+
+        <div style={{marginBottom:"1rem"}}>
+
+          <label
+            style={{
+              display:"block",
+              marginBottom:"6px",
+              fontWeight:"600"
+            }}
+          >
+            Wake Word
+          </label>
 
           <input
-            type="checkbox"
-            checked={ttsEnabled}
-            onChange={()=>setTtsEnabled(!ttsEnabled)}
+            value={wakeWord}
+            onChange={(e)=>setWakeWord(e.target.value)}
+            style={{
+              padding:"10px",
+              width:"260px",
+              borderRadius:"6px",
+              border:"1px solid #333",
+              background:"#000",
+              color:"#fff"
+            }}
           />
 
         </div>
 
-        <div style={styles.row}>
-
-          <label>Voice Control</label>
-
-          <input
-            type="checkbox"
-            checked={voiceEnabled}
-            onChange={()=>setVoiceEnabled(!voiceEnabled)}
-          />
-
-        </div>
-
-        <div style={styles.sliderGroup}>
-
-          <label>Voice Speed</label>
-
-          <input
-            type="range"
-            min="0.5"
-            max="2"
-            step="0.1"
-            value={voiceRate}
-            onChange={(e)=>setVoiceRate(parseFloat(e.target.value))}
-          />
-
-          <span>{voiceRate.toFixed(1)}</span>
-
-        </div>
-
-        <div style={styles.sliderGroup}>
-
-          <label>Voice Pitch</label>
-
-          <input
-            type="range"
-            min="0.5"
-            max="2"
-            step="0.1"
-            value={voicePitch}
-            onChange={(e)=>setVoicePitch(parseFloat(e.target.value))}
-          />
-
-          <span>{voicePitch.toFixed(1)}</span>
-
-        </div>
-
-        <button style={styles.testButton} onClick={testVoice}>
-          Test Voice
+        <button
+          onClick={saveWakeWord}
+          disabled={saving}
+          style={{
+            padding:"10px 18px",
+            borderRadius:"6px",
+            background:"#ff3030",
+            border:"none",
+            color:"#fff",
+            cursor:"pointer"
+          }}
+        >
+          {saving ? "Saving..." : "Save Wake Word"}
         </button>
 
-      </div>
+      </section>
 
-      <button
-        style={styles.saveButton}
-        onClick={saveSettings}
+
+      <section
+        style={{
+          background:"#111",
+          padding:"1.5rem",
+          borderRadius:"10px",
+          border:"1px solid rgba(255,0,0,0.2)"
+        }}
       >
-        {saving ? "Saving..." : "Save Settings"}
-      </button>
 
-      {saved && (
-        <p style={{color:"#4CAF50",marginTop:"10px"}}>
-          Settings saved successfully
-        </p>
-      )}
+        <h2 style={{marginBottom:"1rem"}}>Voice Commands</h2>
+
+        <ul style={{lineHeight:"1.8"}}>
+
+          <li>Rival dashboard</li>
+          <li>Rival open chat</li>
+          <li>Rival open dm</li>
+          <li>Rival leaderboard</li>
+          <li>Rival open profile</li>
+          <li>Rival fitness dashboard</li>
+          <li>Rival solo</li>
+          <li>Rival burnouts</li>
+          <li>Rival live competition</li>
+          <li>Rival pause workout</li>
+          <li>Rival resume workout</li>
+          <li>Rival exit workout</li>
+          <li>Rival cards left</li>
+
+        </ul>
+
+      </section>
 
     </div>
 
-  );
+  )
 
 }
-
-const styles = {
-
-  container:{
-    padding:"30px",
-    maxWidth:"700px",
-    margin:"auto",
-    color:"#fff"
-  },
-
-  card:{
-    background:"#111",
-    padding:"20px",
-    borderRadius:"10px",
-    marginBottom:"20px",
-    display:"flex",
-    flexDirection:"column",
-    gap:"12px",
-    border:"1px solid rgba(255,48,80,0.2)"
-  },
-
-  input:{
-    padding:"10px",
-    borderRadius:"6px",
-    border:"none",
-    background:"#222",
-    color:"#fff"
-  },
-
-  row:{
-    display:"flex",
-    justifyContent:"space-between",
-    alignItems:"center"
-  },
-
-  sliderGroup:{
-    display:"flex",
-    alignItems:"center",
-    gap:"10px"
-  },
-
-  testButton:{
-    background:"#444",
-    border:"none",
-    padding:"10px",
-    color:"#fff",
-    borderRadius:"6px",
-    cursor:"pointer"
-  },
-
-  saveButton:{
-    background:"#ff3050",
-    border:"none",
-    padding:"12px",
-    color:"#fff",
-    borderRadius:"8px",
-    cursor:"pointer",
-    fontWeight:"bold",
-    width:"100%"
-  }
-
-};
