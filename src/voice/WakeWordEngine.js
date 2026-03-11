@@ -1,113 +1,172 @@
-class WakeWordEngine {
+let recognition = null
+let commands = []
+let wakeWord = "rivalis"
 
-  constructor(){
+let isRunning = false
 
-    this.recognition = null
-    this.active = false
-    this.commandMode = false
-    this.onCommand = null
-    this.wakeWord = "rival"
+function normalize(text){
+
+  return text
+    .toLowerCase()
+    .replace(/[^\w\s]/g,"")
+    .trim()
+
+}
+
+function matchCommand(transcript){
+
+  const cleaned = normalize(transcript)
+
+  for(const cmd of commands){
+
+    for(const phrase of cmd.command){
+
+      if(cleaned.includes(normalize(phrase))){
+
+        cmd.action()
+
+        return true
+
+      }
+
+    }
 
   }
+
+  return false
+
+}
+
+function processTranscript(transcript){
+
+  const cleaned = normalize(transcript)
+
+  if(!cleaned.includes(wakeWord)) return
+
+  const commandPart = cleaned.replace(wakeWord,"").trim()
+
+  if(!commandPart) return
+
+  matchCommand(commandPart)
+
+}
+
+function createRecognition(){
+
+  const SpeechRecognition =
+    window.SpeechRecognition || window.webkitSpeechRecognition
+
+  if(!SpeechRecognition){
+
+    console.warn("SpeechRecognition not supported")
+
+    return null
+
+  }
+
+  const rec = new SpeechRecognition()
+
+  rec.continuous = true
+  rec.interimResults = false
+  rec.lang = "en-US"
+
+  rec.onresult = (event)=>{
+
+    const resultIndex = event.resultIndex
+    const transcript = event.results[resultIndex][0].transcript
+
+    processTranscript(transcript)
+
+  }
+
+  rec.onerror = (err)=>{
+
+    console.warn("Voice error:",err)
+
+  }
+
+  rec.onend = ()=>{
+
+    if(isRunning){
+
+      try{
+
+        rec.start()
+
+      }catch(e){
+
+        console.warn("Restart failed",e)
+
+      }
+
+    }
+
+  }
+
+  return rec
+
+}
+
+const WakeWordEngine = {
+
+  init(commandList){
+
+    commands = commandList
+
+    if(!recognition){
+
+      recognition = createRecognition()
+
+    }
+
+  },
+
+  start(){
+
+    if(!recognition) return
+
+    if(isRunning) return
+
+    isRunning = true
+
+    try{
+
+      recognition.start()
+
+    }catch(e){
+
+      console.warn("Voice start error",e)
+
+    }
+
+  },
+
+  stop(){
+
+    if(!recognition) return
+
+    isRunning = false
+
+    try{
+
+      recognition.stop()
+
+    }catch(e){
+
+      console.warn("Voice stop error",e)
+
+    }
+
+  },
 
   setWakeWord(word){
 
     if(!word) return
 
-    this.wakeWord = word.toLowerCase()
-
-  }
-
-  init(onCommand){
-
-    const SpeechRecognition =
-      window.SpeechRecognition || window.webkitSpeechRecognition
-
-    if(!SpeechRecognition) return
-
-    this.recognition = new SpeechRecognition()
-
-    this.recognition.continuous = true
-    this.recognition.interimResults = false
-    this.recognition.lang = "en-US"
-
-    this.onCommand = onCommand
-
-    this.recognition.onresult = (event)=>{
-
-      const text =
-        event.results[event.results.length - 1][0].transcript
-        .trim()
-        .toLowerCase()
-
-      this.process(text)
-
-    }
-
-    this.recognition.onend = ()=>{
-
-      if(this.active)
-        this.recognition.start()
-
-    }
-
-  }
-
-  start(){
-
-    if(!this.recognition) return
-
-    this.active = true
-    this.recognition.start()
-
-  }
-
-  stop(){
-
-    this.active = false
-
-    if(this.recognition)
-      this.recognition.stop()
-
-  }
-
-  speak(text){
-
-    const msg = new SpeechSynthesisUtterance(text)
-
-    speechSynthesis.speak(msg)
-
-  }
-
-  process(text){
-
-    if(!this.commandMode){
-
-      if(text.includes(this.wakeWord)){
-
-        this.commandMode = true
-
-        this.speak("Yes")
-
-        setTimeout(()=>{
-
-          this.commandMode = false
-
-        },6000)
-
-      }
-
-      return
-
-    }
-
-    if(this.onCommand)
-      this.onCommand(text)
-
-    this.commandMode = false
+    wakeWord = normalize(word)
 
   }
 
 }
 
-export default new WakeWordEngine()
+export default WakeWordEngine
