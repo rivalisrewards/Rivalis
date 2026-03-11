@@ -1,250 +1,364 @@
-import React, { useEffect, useState, useContext } from "react"
+import React, { useEffect, useState } from "react"
 import { auth, db } from "../firebase"
-import { doc, updateDoc } from "firebase/firestore"
+import { doc, getDoc, updateDoc } from "firebase/firestore"
 
-import { VoiceContext } from "../voice/VoiceProvider"
+export default function Settings(){
 
-export default function Settings({ userProfile }){
+const user = auth.currentUser
 
-  const { speak } = useContext(VoiceContext)
+const [loading,setLoading] = useState(true)
+const [saving,setSaving] = useState(false)
 
-  const [loading,setLoading] = useState(false)
+const [nickname,setNickname] = useState("")
+const [wakeWord,setWakeWord] = useState("rival")
 
-  const [nickname,setNickname] = useState("")
-  const [voiceEnabled,setVoiceEnabled] = useState(false)
-  const [ttsEnabled,setTtsEnabled] = useState(false)
-  const [wakeWord,setWakeWord] = useState("rivalis")
-  const [notifications,setNotifications] = useState(true)
-  const [darkMode,setDarkMode] = useState(false)
+const [ttsEnabled,setTtsEnabled] = useState(true)
+const [screenReader,setScreenReader] = useState(false)
 
-  useEffect(()=>{
+const [voiceName,setVoiceName] = useState("")
+const [voiceRate,setVoiceRate] = useState(1)
+const [voicePitch,setVoicePitch] = useState(1)
 
-    if(!userProfile) return
+const [notificationsEnabled,setNotificationsEnabled] = useState(true)
+const [matchAlerts,setMatchAlerts] = useState(true)
+const [chatAlerts,setChatAlerts] = useState(true)
 
-    setNickname(userProfile.nickname || "")
-    setVoiceEnabled(userProfile.voiceEnabled || false)
-    setTtsEnabled(userProfile.ttsEnabled || false)
-    setWakeWord(userProfile.wakeWord || "rivalis")
-    setNotifications(userProfile.notifications ?? true)
-    setDarkMode(userProfile.darkMode ?? false)
+const [voices,setVoices] = useState([])
 
-  },[userProfile])
+useEffect(()=>{
 
-  async function saveSettings(){
+const loadVoices = ()=>{
 
-    try{
+const v = speechSynthesis.getVoices()
 
-      setLoading(true)
+setVoices(v)
 
-      const uid = auth.currentUser.uid
-
-      const ref = doc(db,"users",uid)
-
-      await updateDoc(ref,{
-        nickname,
-        voiceEnabled,
-        ttsEnabled,
-        wakeWord,
-        notifications,
-        darkMode
-      })
-
-      if(ttsEnabled){
-
-        speak("Settings saved")
-
-      }
-
-    }catch(err){
-
-      console.error("Settings save error",err)
-
-    }finally{
-
-      setLoading(false)
-
-    }
-
-  }
-
-  function testVoice(){
-
-    speak("Voice system is active and ready")
-
-  }
-
-  return(
-
-    <div style={styles.page}>
-
-      <h1 style={styles.title}>Settings</h1>
-
-      {/* Nickname */}
-
-      <div style={styles.section}>
-        <label>Nickname</label>
-
-        <input
-          value={nickname}
-          onChange={(e)=>setNickname(e.target.value)}
-          style={styles.input}
-        />
-      </div>
-
-
-      {/* Voice Control */}
-
-      <div style={styles.section}>
-
-        <label>Voice Control</label>
-
-        <input
-          type="checkbox"
-          checked={voiceEnabled}
-          onChange={(e)=>setVoiceEnabled(e.target.checked)}
-        />
-
-      </div>
-
-
-      {/* TTS */}
-
-      <div style={styles.section}>
-
-        <label>Text To Speech</label>
-
-        <input
-          type="checkbox"
-          checked={ttsEnabled}
-          onChange={(e)=>setTtsEnabled(e.target.checked)}
-        />
-
-      </div>
-
-
-      {/* Wake Word */}
-
-      <div style={styles.section}>
-
-        <label>Wake Word</label>
-
-        <input
-          value={wakeWord}
-          onChange={(e)=>setWakeWord(e.target.value)}
-          style={styles.input}
-        />
-
-      </div>
-
-
-      {/* Notifications */}
-
-      <div style={styles.section}>
-
-        <label>Notifications</label>
-
-        <input
-          type="checkbox"
-          checked={notifications}
-          onChange={(e)=>setNotifications(e.target.checked)}
-        />
-
-      </div>
-
-
-      {/* Dark Mode */}
-
-      <div style={styles.section}>
-
-        <label>Dark Mode</label>
-
-        <input
-          type="checkbox"
-          checked={darkMode}
-          onChange={(e)=>setDarkMode(e.target.checked)}
-        />
-
-      </div>
-
-
-      {/* Voice Test */}
-
-      <button
-        onClick={testVoice}
-        style={styles.secondaryButton}
-      >
-        Test Voice
-      </button>
-
-
-      {/* Save */}
-
-      <button
-        onClick={saveSettings}
-        disabled={loading}
-        style={styles.primaryButton}
-      >
-
-        {loading ? "Saving..." : "Save Settings"}
-
-      </button>
-
-    </div>
-
-  )
+if(v.length && !voiceName){
+setVoiceName(v[0].name)
+}
 
 }
 
-const styles = {
+loadVoices()
 
-  page:{
-    maxWidth:600,
-    margin:"40px auto",
-    padding:20,
-    color:"#fff"
-  },
+speechSynthesis.onvoiceschanged = loadVoices
 
-  title:{
-    fontSize:32,
-    marginBottom:30
-  },
+},[])
 
-  section:{
-    marginBottom:20,
-    display:"flex",
-    justifyContent:"space-between",
-    alignItems:"center"
-  },
+useEffect(()=>{
 
-  input:{
-    padding:8,
-    borderRadius:6,
-    border:"1px solid #555",
-    background:"#111",
-    color:"#fff"
-  },
+const loadSettings = async()=>{
 
-  primaryButton:{
-    width:"100%",
-    padding:14,
-    marginTop:20,
-    background:"#e11d48",
-    border:"none",
-    borderRadius:8,
-    color:"#fff",
-    fontSize:16,
-    cursor:"pointer"
-  },
+if(!user){
+setLoading(false)
+return
+}
 
-  secondaryButton:{
-    width:"100%",
-    padding:12,
-    marginTop:10,
-    background:"#333",
-    border:"none",
-    borderRadius:8,
-    color:"#fff",
-    cursor:"pointer"
-  }
+try{
+
+const ref = doc(db,"users",user.uid)
+const snap = await getDoc(ref)
+
+if(snap.exists()){
+
+const data = snap.data()
+
+if(data.nickname) setNickname(data.nickname)
+if(data.wakeWord) setWakeWord(data.wakeWord)
+
+if(data.ttsEnabled !== undefined)
+setTtsEnabled(data.ttsEnabled)
+
+if(data.screenReader !== undefined)
+setScreenReader(data.screenReader)
+
+if(data.selectedVoice)
+setVoiceName(data.selectedVoice)
+
+if(data.voiceRate)
+setVoiceRate(data.voiceRate)
+
+if(data.voicePitch)
+setVoicePitch(data.voicePitch)
+
+if(data.notificationsEnabled !== undefined)
+setNotificationsEnabled(data.notificationsEnabled)
+
+if(data.matchAlerts !== undefined)
+setMatchAlerts(data.matchAlerts)
+
+if(data.chatAlerts !== undefined)
+setChatAlerts(data.chatAlerts)
+
+}
+
+}catch(err){
+
+console.error("Settings load error",err)
+
+}
+
+setLoading(false)
+
+}
+
+loadSettings()
+
+},[user])
+
+const speak = (text)=>{
+
+if(!ttsEnabled) return
+
+const msg = new SpeechSynthesisUtterance(text)
+
+const selected = voices.find(v=>v.name === voiceName)
+
+if(selected) msg.voice = selected
+
+msg.rate = voiceRate
+msg.pitch = voicePitch
+
+speechSynthesis.speak(msg)
+
+}
+
+const testVoice = ()=>{
+
+speak("Voice settings updated successfully")
+
+}
+
+const saveSettings = async()=>{
+
+if(!user) return
+
+setSaving(true)
+
+try{
+
+const ref = doc(db,"users",user.uid)
+
+await updateDoc(ref,{
+
+nickname,
+wakeWord:wakeWord.toLowerCase(),
+
+ttsEnabled,
+screenReader,
+
+selectedVoice:voiceName,
+voiceRate,
+voicePitch,
+
+notificationsEnabled,
+matchAlerts,
+chatAlerts
+
+})
+
+speak("Settings saved")
+
+}catch(err){
+
+console.error("Save settings failed",err)
+
+}
+
+setSaving(false)
+
+}
+
+if(loading){
+return <div style={{padding:"2rem"}}>Loading settings...</div>
+}
+
+return(
+
+<div style={{maxWidth:"900px",margin:"0 auto",padding:"2rem",color:"#fff"}}>
+
+<h1 style={{marginBottom:"2rem"}}>Settings</h1>
+
+{/* PROFILE */}
+
+<section style={{background:"#111",padding:"1.5rem",borderRadius:"10px",marginBottom:"2rem"}}>
+
+<h2>Profile</h2>
+
+<label>Nickname</label>
+
+<input
+value={nickname}
+onChange={(e)=>setNickname(e.target.value)}
+style={{display:"block",marginTop:"6px",padding:"8px"}}
+/>
+
+</section>
+
+
+{/* VOICE */}
+
+<section style={{background:"#111",padding:"1.5rem",borderRadius:"10px",marginBottom:"2rem"}}>
+
+<h2>Voice Assistant</h2>
+
+<label>
+
+<input
+type="checkbox"
+checked={ttsEnabled}
+onChange={(e)=>setTtsEnabled(e.target.checked)}
+/>
+
+Enable Voice Feedback
+
+</label>
+
+<br/><br/>
+
+<label>
+
+<input
+type="checkbox"
+checked={screenReader}
+onChange={(e)=>setScreenReader(e.target.checked)}
+/>
+
+Read Interface Aloud
+
+</label>
+
+<br/><br/>
+
+<label>Wake Word</label>
+
+<input
+value={wakeWord}
+onChange={(e)=>setWakeWord(e.target.value)}
+style={{marginLeft:"10px"}}
+/>
+
+<br/><br/>
+
+<label>Voice</label>
+
+<select
+value={voiceName}
+onChange={(e)=>setVoiceName(e.target.value)}
+style={{marginLeft:"10px"}}
+>
+
+{voices.map(v=>(
+<option key={v.name} value={v.name}>
+{v.name}
+</option>
+))}
+
+</select>
+
+<br/><br/>
+
+<label>Voice Speed</label>
+
+<input
+type="range"
+min="0.5"
+max="2"
+step="0.1"
+value={voiceRate}
+onChange={(e)=>setVoiceRate(parseFloat(e.target.value))}
+/>
+
+<br/><br/>
+
+<label>Voice Pitch</label>
+
+<input
+type="range"
+min="0.5"
+max="2"
+step="0.1"
+value={voicePitch}
+onChange={(e)=>setVoicePitch(parseFloat(e.target.value))}
+/>
+
+<br/><br/>
+
+<button onClick={testVoice}>
+Test Voice
+</button>
+
+</section>
+
+
+{/* NOTIFICATIONS */}
+
+<section style={{background:"#111",padding:"1.5rem",borderRadius:"10px",marginBottom:"2rem"}}>
+
+<h2>Notifications</h2>
+
+<label>
+
+<input
+type="checkbox"
+checked={notificationsEnabled}
+onChange={(e)=>setNotificationsEnabled(e.target.checked)}
+/>
+
+Enable Notifications
+
+</label>
+
+<br/><br/>
+
+<label>
+
+<input
+type="checkbox"
+checked={matchAlerts}
+onChange={(e)=>setMatchAlerts(e.target.checked)}
+/>
+
+Match Alerts
+
+</label>
+
+<br/><br/>
+
+<label>
+
+<input
+type="checkbox"
+checked={chatAlerts}
+onChange={(e)=>setChatAlerts(e.target.checked)}
+/>
+
+Chat Alerts
+
+</label>
+
+</section>
+
+
+<button
+onClick={saveSettings}
+disabled={saving}
+style={{
+padding:"12px 20px",
+background:"#ff3030",
+border:"none",
+borderRadius:"6px",
+color:"#fff",
+cursor:"pointer"
+}}
+>
+
+{saving ? "Saving..." : "Save Settings"}
+
+</button>
+
+</div>
+
+)
 
 }
