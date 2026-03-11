@@ -3,6 +3,7 @@ let commands = []
 let wakeWord = "rivalis"
 
 let isRunning = false
+let supported = false
 
 function normalize(text){
 
@@ -54,15 +55,20 @@ function processTranscript(transcript){
 function createRecognition(){
 
   const SpeechRecognition =
-    window.SpeechRecognition || window.webkitSpeechRecognition
+    window.SpeechRecognition ||
+    window.webkitSpeechRecognition
 
   if(!SpeechRecognition){
 
-    console.warn("SpeechRecognition not supported")
+    console.warn("Speech recognition not supported on this browser")
+
+    supported = false
 
     return null
 
   }
+
+  supported = true
 
   const rec = new SpeechRecognition()
 
@@ -124,7 +130,7 @@ const WakeWordEngine = {
   start(){
 
     if(!recognition) return
-
+    if(!supported) return
     if(isRunning) return
 
     isRunning = true
@@ -164,6 +170,12 @@ const WakeWordEngine = {
     if(!word) return
 
     wakeWord = normalize(word)
+
+  },
+
+  isSupported(){
+
+    return supported
 
   }
 
